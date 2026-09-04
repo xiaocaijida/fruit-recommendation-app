@@ -799,8 +799,8 @@
         </div>
       </div>
       <div class="filters">
-        <select id="fruitFilter" aria-label="水果"></select>
-        <select id="monthFilter" aria-label="成熟月份"></select>
+        <select id="fruitFilter" aria-label="水果大类"></select>
+        <select id="countFilter" aria-label="购买次数" title="按每条店铺记录的购买次数筛选"></select>
         <div class="search-wrap">
           <input id="searchInput" type="search" placeholder="搜索水果、品种、店铺、价格" autocomplete="off">
         </div>
@@ -885,6 +885,7 @@
     const state = {
       fruit: "全部",
       month: "全部",
+      minCount: "全部",
       platform: "全部",
       query: ""
     };
@@ -937,7 +938,7 @@
     const fallbackTheme = ["#276749", "#e8f3e2", "#c6dac0", "#17321f"];
 
     const fruitFilter = document.getElementById("fruitFilter");
-    const monthFilter = document.getElementById("monthFilter");
+    const countFilter = document.getElementById("countFilter");
     const searchInput = document.getElementById("searchInput");
     const monthRail = document.getElementById("monthRail");
     const platformRail = document.getElementById("platformRail");
@@ -967,8 +968,25 @@
     }
 
     function parseCount(value) {
-      const match = String(value || "").match(/\d+/);
-      return match ? Number(match[0]) : 0;
+      const match = String(value ?? "").trim().match(/^(\d+)\s*(?:次)?$/);
+      return match ? Number(match[1]) : 0;
+    }
+
+    const fruitCategories = [
+      { label: "橘子 / 柑（含沃柑）", names: ["橘子", "柑", "沃柑"] },
+      { label: "甜瓜（含哈密瓜）", names: ["甜瓜", "哈密瓜"] },
+      { label: "樱桃", names: ["樱桃", "大樱桃"] },
+      { label: "番石榴（芭乐）", names: ["番石榴", "芭乐"] },
+      { label: "姑娘果（灯笼果）", names: ["姑娘果", "灯笼果"] }
+    ];
+    const vegetableNames = new Set(["红薯", "白薯", "南瓜", "玉米", "芋头"]);
+
+    function categoryFor(fruit) {
+      return fruitCategories.find(category => category.names.includes(fruit))?.label || fruit;
+    }
+
+    function countLabel(value) {
+      return value === "全部" ? "全部购买次数" : `购买 ${value} 次及以上`;
     }
 
     function monthLabel(value) {
@@ -1092,9 +1110,30 @@
     }
 
     function setupFilters() {
-      const fruits = ["全部", ...fruitCards.map(card => card.fruit)];
-      state.fruit = fillSelect(fruitFilter, fruits, value => value === "全部" ? "全部水果" : value, state.fruit);
-      state.month = fillSelect(monthFilter, monthOptions, monthLabel, state.month);
+      const categories = [...new Set(fruitCards.map(card => categoryFor(card.fruit)))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+      fruitFilter.innerHTML = "";
+      const all = document.createElement("option");
+      all.value = "全部";
+      all.textContent = "全部水果";
+      fruitFilter.appendChild(all);
+      [
+        ["水果", categories.filter(name => !vegetableNames.has(name))],
+        ["薯芋 / 蔬菜", categories.filter(name => vegetableNames.has(name))]
+      ].forEach(([label, names]) => {
+        if (!names.length) return;
+        const group = document.createElement("optgroup");
+        group.label = label;
+        names.forEach(name => {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          group.appendChild(option);
+        });
+        fruitFilter.appendChild(group);
+      });
+      if (!categories.includes(state.fruit)) state.fruit = "全部";
+      fruitFilter.value = state.fruit;
+      state.minCount = fillSelect(countFilter, ["全部", "1", "2", "3", "5", "10"], countLabel, state.minCount);
       renderMonthRail();
       renderPlatformRail();
     }
@@ -1121,7 +1160,6 @@
         button.textContent = value === "全部" ? "全部" : monthLabel(value);
         button.addEventListener("click", () => {
           state.month = value;
-          monthFilter.value = value;
           render();
         });
         monthRail.appendChild(button);
@@ -1150,6 +1188,7 @@
       if (!query) return true;
       return [
         detail.fruit,
+        categoryFor(detail.fruit),
         detail.variety,
         detail.store,
         detail.price,
@@ -1162,20 +1201,18 @@
     function filteredCards() {
       const query = state.query.trim().toLowerCase();
       return fruitCards.map(card => {
-        if (state.fruit !== "全部" && card.fruit !== state.fruit) return null;
+        if (state.fruit !== "全部" && categoryFor(card.fruit) !== state.fruit) return null;
         if (!card.details.some(detail => itemInMonth(detail, state.month))) return null;
 
         const matchingDetails = card.details.filter(detail => {
           if (state.platform !== "全部" && normalizePlatform(detail.platform) !== state.platform) return false;
           if (!itemInMonth(detail, state.month)) return false;
-          return detailMatchesSearch(detail, query) || (!query && true);
+          if (state.minCount !== "全部" && parseCount(detail.count) < Number(state.minCount)) return false;
+          return detailMatchesSearch(detail, query);
         });
 
-        const fruitNameMatches = !query || card.fruit.toLowerCase().includes(query);
-        const usableDetails = matchingDetails.length ? matchingDetails : [];
-        if (!usableDetails.length && !fruitNameMatches) return null;
-        if (state.platform !== "全部" && !usableDetails.length) return null;
-        return { ...card, visibleDetails: usableDetails.length ? usableDetails : card.details.filter(detail => itemInMonth(detail, state.month)) };
+        if (!matchingDetails.length) return null;
+        return { ...card, visibleDetails: matchingDetails };
       }).filter(Boolean);
     }
 
@@ -1185,7 +1222,7 @@
       document.getElementById("visibleCount").textContent = cards.length;
       renderUsageMetrics();
       document.getElementById("resultText").textContent = `共 ${cards.length} 类`;
-      document.getElementById("activeText").textContent = `${state.fruit === "全部" ? "全部水果" : state.fruit} · ${monthLabel(state.month)} · ${state.platform === "全部" ? "全部平台" : state.platform}`;
+      document.getElementById("activeText").textContent = `${state.fruit === "全部" ? "全部水果" : state.fruit} · ${countLabel(state.minCount)} · ${monthLabel(state.month)} · ${state.platform === "全部" ? "全部平台" : state.platform}`;
       [...monthRail.children].forEach(button => button.classList.toggle("active", button.dataset.month === state.month));
       [...platformRail.children].forEach(button => button.classList.toggle("active", button.dataset.platform === state.platform));
     }
@@ -1247,10 +1284,11 @@
     function openDetail(card) {
       applyFruitTheme(detailMask, card.fruit);
       document.getElementById("modalTitle").textContent = card.fruit;
-      document.getElementById("modalSubtitle").textContent = `共 ${card.details.length} 家店铺`;
+      const details = card.visibleDetails || card.details;
+      document.getElementById("modalSubtitle").textContent = `符合筛选 ${details.length} 家 / 共 ${card.details.length} 家店铺`;
       detailGrid.innerHTML = "";
 
-      card.details.forEach(detail => {
+      details.forEach(detail => {
         const box = document.createElement("article");
         box.className = "store-detail";
         const title = document.createElement("h3");
@@ -1553,8 +1591,8 @@
       state.fruit = event.target.value;
       render();
     });
-    monthFilter.addEventListener("change", event => {
-      state.month = event.target.value;
+    countFilter.addEventListener("change", event => {
+      state.minCount = event.target.value;
       render();
     });
     searchInput.addEventListener("input", event => {
