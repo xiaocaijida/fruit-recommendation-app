@@ -1,0 +1,1587 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#276749">
+  <title>水果推荐</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --ink: #172116;
+      --muted: #64715f;
+      --line: #dce5d6;
+      --leaf: #276749;
+      --leaf-soft: #e8f3e2;
+      --gold-soft: #fff3d7;
+      --bg: #f6f8f2;
+      --card: #ffffff;
+      --fruit-main: #276749;
+      --fruit-soft: #e8f3e2;
+      --fruit-line: #c6dac0;
+      --fruit-ink: #17321f;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(100%, 820px);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding-bottom: 28px;
+      background: var(--bg);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 16px 14px 12px;
+      background: var(--leaf);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(24, 65, 42, 0.20);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .import-button {
+      flex: 0 0 auto;
+      min-height: 36px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 12px;
+      color: #17321f;
+      background: #fff;
+      font-weight: 800;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .search-wrap {
+      grid-column: 1 / -1;
+    }
+
+    select,
+    input {
+      width: 100%;
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: #8a9687;
+    }
+
+    main {
+      padding: 16px 12px 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      box-shadow: 0 4px 12px rgba(34, 59, 37, 0.05);
+    }
+
+    .stat span {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .stat strong {
+      display: block;
+      overflow: hidden;
+      color: var(--ink);
+      font-size: 17px;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chip-rail {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: max-content;
+      gap: 7px;
+      overflow-x: auto;
+      margin: 0 -12px 10px;
+      padding: 0 12px 2px;
+      scrollbar-width: none;
+    }
+
+    .chip-rail::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      min-width: 46px;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 10px;
+      color: #344331;
+      background: #fff;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .chip.active {
+      border-color: #a16010;
+      color: #633700;
+      background: var(--gold-soft);
+    }
+
+    .result-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 4px 2px 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .data-status {
+      flex: 0 0 auto;
+      min-height: 24px;
+      padding: 4px 8px;
+      border: 1px solid #c8d9bf;
+      border-radius: 999px;
+      color: #315438;
+      background: #eef7e9;
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.2;
+    }
+
+    .data-status.warn {
+      border-color: #e2c98d;
+      color: #6b4708;
+      background: #fff4d5;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .item {
+      width: 100%;
+      min-height: 138px;
+      border: 1px solid var(--fruit-line);
+      border-radius: 8px;
+      padding: 12px;
+      background: linear-gradient(90deg, var(--fruit-soft) 0 7px, var(--card) 7px 100%);
+      color: inherit;
+      text-align: left;
+      box-shadow: 0 5px 16px rgba(34, 59, 37, 0.06);
+    }
+
+    .item:active {
+      transform: translateY(1px);
+    }
+
+    .row-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 10px;
+    }
+
+    .fruit {
+      display: inline-block;
+      max-width: 100%;
+      margin-bottom: 4px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      color: var(--fruit-main);
+      background: var(--fruit-soft);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .variety {
+      margin: 0;
+      color: var(--fruit-ink);
+      font-size: 19px;
+      line-height: 1.25;
+      font-weight: 850;
+      overflow-wrap: anywhere;
+    }
+
+    .platform {
+      min-width: 58px;
+      max-width: 116px;
+      min-height: 28px;
+      padding: 5px 8px;
+      border: 1px solid var(--fruit-line);
+      border-radius: 8px;
+      color: var(--fruit-ink);
+      background: var(--fruit-soft);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 1.25fr 0.85fr;
+      gap: 8px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .meta div {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .meta span {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--fruit-main);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .empty {
+      display: none;
+      margin-top: 28px;
+      padding: 22px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      background: #fff;
+      text-align: center;
+    }
+
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      align-items: flex-end;
+      background: rgba(13, 24, 16, 0.46);
+    }
+
+    .modal-mask.show {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-height: 86vh;
+      overflow: auto;
+      padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+      border-top: 7px solid var(--fruit-main);
+      border-radius: 8px 8px 0 0;
+      background: #fff;
+      box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.20);
+    }
+
+    .modal-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 38px;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+
+    .modal-title {
+      margin: 0 0 4px;
+      font-size: 22px;
+      line-height: 1.25;
+      font-weight: 850;
+      overflow-wrap: anywhere;
+    }
+
+    .modal-subtitle {
+      margin: 0;
+      color: var(--fruit-main);
+      font-size: 14px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .icon-button {
+      width: 38px;
+      height: 38px;
+      border: 0;
+      border-radius: 50%;
+      color: var(--fruit-ink);
+      background: var(--fruit-soft);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .detail-grid {
+      display: grid;
+      gap: 9px;
+    }
+
+    .store-detail {
+      padding: 10px;
+      border: 1px solid var(--fruit-line);
+      border-radius: 8px;
+      background: var(--fruit-soft);
+    }
+
+    .store-detail h3 {
+      margin: 0 0 8px;
+      color: var(--fruit-ink);
+      font-size: 16px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .store-detail .detail-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .detail-meta span {
+      display: block;
+      color: var(--fruit-main);
+      font-size: 11px;
+      margin-bottom: 2px;
+    }
+
+    .detail-meta div {
+      min-width: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .import-modal {
+      border-top-color: var(--leaf);
+    }
+
+    .import-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form-field {
+      display: grid;
+      gap: 5px;
+    }
+
+    .form-field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .form-field input {
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .import-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .primary-action,
+    .secondary-action {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+
+    .primary-action {
+      color: #fff;
+      background: var(--leaf);
+    }
+
+    .secondary-action {
+      color: #213520;
+      background: #edf2e8;
+    }
+
+    .import-status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .import-status.error {
+      color: #9f2d20;
+    }
+
+    .app {
+      width: min(100%, 920px);
+      background:
+        linear-gradient(180deg, #f7faf1 0%, #f2f7ec 42%, #fff7ef 100%);
+    }
+
+    header {
+      overflow: hidden;
+      padding: 18px 14px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+      background:
+        linear-gradient(135deg, #163d2a 0%, #2b6748 56%, #cb7d1b 100%);
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0 1px, transparent 1px 18px);
+      opacity: 0.45;
+    }
+
+    .header-top,
+    .filters {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-top {
+      align-items: stretch;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .header-copy {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 4px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    h1 {
+      font-size: 26px;
+      line-height: 1.15;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(68px, auto));
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .toolbar-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      border-radius: 8px;
+      padding: 0 11px;
+      color: #14331f;
+      background: rgba(255, 255, 255, 0.92);
+      font-size: 13px;
+      font-weight: 850;
+      white-space: nowrap;
+      box-shadow: 0 8px 18px rgba(13, 33, 20, 0.16);
+    }
+
+    .toolbar-button:active {
+      transform: translateY(1px);
+    }
+
+    .toolbar-button .button-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      color: #fff;
+      background: #2b6748;
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .download-button .button-icon {
+      background: #b36110;
+    }
+
+    .filters {
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.14);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    select,
+    input {
+      border: 1px solid rgba(33, 75, 48, 0.10);
+      box-shadow: 0 4px 12px rgba(10, 31, 18, 0.08);
+    }
+
+    main {
+      padding: 16px 12px 0;
+    }
+
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      position: relative;
+      overflow: hidden;
+      min-height: 70px;
+      padding: 11px 12px;
+      border-color: rgba(83, 111, 75, 0.18);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 9px 22px rgba(35, 61, 33, 0.08);
+    }
+
+    .stat::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #2b6748, #d18a28, #b94d45);
+    }
+
+    .stat span {
+      margin-bottom: 6px;
+      color: #63715e;
+      font-size: 12px;
+    }
+
+    .stat strong {
+      color: #182417;
+      font-size: 22px;
+      font-weight: 850;
+    }
+
+    .stat:nth-child(5) {
+      grid-column: 1 / -1;
+    }
+
+    .chip-rail {
+      margin-bottom: 11px;
+      padding-bottom: 4px;
+    }
+
+    .chip {
+      min-height: 36px;
+      border-color: rgba(89, 111, 79, 0.24);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 5px 14px rgba(37, 59, 33, 0.06);
+    }
+
+    .chip.active {
+      border-color: #c27820;
+      color: #fff;
+      background: #b86618;
+      box-shadow: 0 8px 18px rgba(178, 99, 24, 0.20);
+    }
+
+    .result-line {
+      align-items: stretch;
+      margin: 6px 0 12px;
+      padding: 10px 11px;
+      border: 1px solid rgba(91, 114, 80, 0.18);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.76);
+      box-shadow: 0 6px 18px rgba(35, 61, 33, 0.06);
+    }
+
+    .result-line > span {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .data-status,
+    .download-status {
+      border-radius: 8px;
+    }
+
+    .download-status {
+      min-height: 24px;
+      padding: 4px 8px;
+      color: #704108;
+      background: #fff0d7;
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.2;
+    }
+
+    .download-status.error {
+      color: #9f2d20;
+      background: #ffe6df;
+    }
+
+    .list {
+      gap: 12px;
+    }
+
+    .item {
+      position: relative;
+      overflow: hidden;
+      min-height: 154px;
+      padding: 13px;
+      background:
+        linear-gradient(90deg, var(--fruit-main) 0 5px, transparent 5px 100%),
+        linear-gradient(180deg, var(--fruit-soft), #fff 76%);
+      box-shadow: 0 10px 24px rgba(34, 59, 37, 0.10);
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+    }
+
+    .item:hover {
+      border-color: var(--fruit-main);
+      box-shadow: 0 14px 28px rgba(34, 59, 37, 0.13);
+      transform: translateY(-1px);
+    }
+
+    .fruit {
+      border: 1px solid var(--fruit-line);
+    }
+
+    .platform {
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+    }
+
+    .meta {
+      gap: 9px;
+    }
+
+    .meta div {
+      padding: 8px;
+      border: 1px solid rgba(84, 103, 75, 0.12);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .modal {
+      border-top-width: 6px;
+      box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.24);
+    }
+
+    .store-detail {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.72), var(--fruit-soft));
+    }
+
+    @media (min-width: 720px) {
+      header {
+        border-radius: 0 0 8px 8px;
+      }
+
+      .filters {
+        grid-template-columns: 1fr 1fr 1.2fr;
+      }
+
+      .search-wrap {
+        grid-column: auto;
+      }
+
+      .list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stats {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .stat:nth-child(5) {
+        grid-column: auto;
+      }
+
+      .modal-mask {
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
+      }
+
+      .modal {
+        max-width: 600px;
+        border-radius: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-top">
+        <div class="header-copy">
+          <span class="eyebrow">鲜果清单</span>
+          <h1>水果推荐</h1>
+        </div>
+        <div class="actions" aria-label="页面操作">
+          <button id="downloadData" class="toolbar-button download-button" type="button" title="下载当前结果" aria-label="下载当前结果">
+            <span class="button-icon" aria-hidden="true">↓</span>
+            <span>下载</span>
+          </button>
+          <button id="openImport" class="toolbar-button import-button" type="button" title="导入Excel" aria-label="导入Excel">
+            <span class="button-icon" aria-hidden="true">+</span>
+            <span>导入</span>
+          </button>
+        </div>
+      </div>
+      <div class="filters">
+        <select id="fruitFilter" aria-label="水果"></select>
+        <select id="monthFilter" aria-label="成熟月份"></select>
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="搜索水果、品种、店铺、价格" autocomplete="off">
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="stats" aria-label="数据概览">
+        <div class="stat"><span>水果卡片</span><strong id="totalCount">0</strong></div>
+        <div class="stat"><span>店铺记录</span><strong id="storeCount">0</strong></div>
+        <div class="stat"><span>当前结果</span><strong id="visibleCount">0</strong></div>
+        <div class="stat"><span>浏览量</span><strong id="viewCount">0</strong></div>
+        <div class="stat"><span>下载量</span><strong id="downloadCount">0</strong></div>
+      </section>
+
+      <div id="monthRail" class="chip-rail" aria-label="月份快捷筛选"></div>
+      <div id="platformRail" class="chip-rail" aria-label="平台快捷筛选"></div>
+
+      <div class="result-line">
+        <span id="resultText">共 0 类</span>
+        <span id="dataStatus" class="data-status warn">内置数据</span>
+        <span id="downloadStatus" class="download-status">未下载</span>
+        <span id="activeText">全部水果 · 全部月份 · 全部平台</span>
+      </div>
+
+      <div id="list" class="list"></div>
+      <div id="empty" class="empty">没有找到符合条件的水果。</div>
+    </main>
+  </div>
+
+  <div id="detailMask" class="modal-mask" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <section class="modal">
+      <div class="modal-head">
+        <div>
+          <h2 id="modalTitle" class="modal-title"></h2>
+          <p id="modalSubtitle" class="modal-subtitle"></p>
+        </div>
+        <button id="closeDetail" class="icon-button" type="button" aria-label="关闭">×</button>
+      </div>
+      <div id="detailGrid" class="detail-grid"></div>
+    </section>
+  </div>
+
+  <div id="importMask" class="modal-mask" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <section class="modal import-modal">
+      <div class="modal-head">
+        <div>
+          <h2 id="importTitle" class="modal-title">导入Excel</h2>
+          <p class="modal-subtitle">密码验证后更新页面数据</p>
+        </div>
+        <button id="closeImport" class="icon-button" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="import-form">
+        <div class="form-field">
+          <label for="passwordInput">密码</label>
+          <input id="passwordInput" type="password" autocomplete="current-password">
+        </div>
+        <div class="form-field">
+          <label for="excelInput">Excel文件</label>
+          <input id="excelInput" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        </div>
+        <div class="import-actions">
+          <button id="importExcel" class="primary-action" type="button">导入</button>
+          <button id="clearImport" class="secondary-action" type="button">恢复内置</button>
+        </div>
+        <div id="importStatus" class="import-status"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const embeddedRows = [{"source_page":2,"fruit":"芒果","variety":"鹰嘴芒","store":"茗赐优果香水柠檬基地","count":"2","price":"8.8/5斤","platform":"PDD","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":2,"fruit":"芒果","variety":"金煌芒","store":"味在上顶上","count":"2","price":"17","platform":"","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":2,"fruit":"芒果","variety":"海南玉芒","store":"老树芒","count":"3","price":"15.1/8斤\n15.7/8斤\n18.5/8斤","platform":"PDD","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":2,"fruit":"芒果","variety":"芒果","store":"芒族大叔_5075","count":"4","price":"21.78/5斤\n21.8/5斤\n24.8/5斤","platform":"PDD（似乎已关店）","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":2,"fruit":"芒果","variety":"芒果","store":"宾邮生鲜","count":"1","price":"6.9/5斤","platform":"PDD","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":2,"fruit":"芒果","variety":"金煌芒","store":"金瑞精品生鲜水果甄选","count":"1","price":"17.85/5斤","platform":"DY","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":2,"fruit":"芒果","variety":"金煌芒","store":"多乐汇果果","count":"1","price":"26.8/10斤","platform":"PDD","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":2,"fruit":"芒果","variety":"芒果","store":"芒德乐水果店","count":"4","price":"19.9/5斤\n15.9/5斤","platform":"DY","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":2,"fruit":"芒果","variety":"芒果","store":"后山村上","count":"4","price":"14.56/5斤\n16.9/5斤\n19.9/5斤","platform":"","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":2,"fruit":"芒果","variety":"芒果","store":"王小二生鲜果园","count":"3","price":"23.18/10斤\n16.59/10斤\n17.89/10斤","platform":"PDD","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"芒果","variety":"贵妃芒","store":"本味鲜果园","count":"1","price":"7.8/5斤","platform":"","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"芒果","variety":"青芒","store":"优品鲜水果园","count":"1","price":"","platform":"PDD","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"芒果","variety":"凯特芒","store":"怡口甜果园","count":"3","price":"13.9/3.1斤\n10.9/3.1斤","platform":"PDD","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"黄桃","store":"沂蒙特产个体店","count":"2","price":"30.9/3斤","platform":"DY","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"黄毛蟠桃","store":"领鲜沂蒙山鲜果园","count":"5","price":"20.74\n29\n23.9","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"沂蒙黄桃","store":"果然不错517","count":"2","price":"25.8/5斤","platform":"DY","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"沂蒙黄桃","store":"俊杰生鲜","count":"1","price":"19.9/5斤","platform":"DY","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"白心油桃","store":"莉菓惠果蔬旗舰店","count":"2","price":"21.18/4.5斤\n25.3/4.5斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"黄桃","store":"奋勇当鲜果园","count":"1","price":"29.8/4.5斤","platform":"DY","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"桃子","store":"晋鲜生鲜果","count":"1","price":"24.8/4.5斤","platform":"DY","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"桃子","store":"月巴月巴果园","count":"","price":"14.9/5斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"黄桃（可放软）","store":"锦果实水果生鲜官方旗舰店","count":"4","price":"28.99/5斤\n26.8","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"桃子","store":"牛小乐生鲜水果店","count":"2","price":"12.8/10斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"桃子","store":"万荣苹果水果生鲜旗舰店","count":"2","price":"12.1/10斤\n12.8/10斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"桃子","store":"池珏严选","count":"1","price":"12.5/5斤","platform":"","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"黄桃","store":"巡果侠水果生鲜旗舰店","count":"1","price":"14.5","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"黄蟠桃","store":"宏都生鲜专营店","count":"1","price":"14.3","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"桃子","store":"鲜逗","count":"1","price":"14.8/5斤","platform":"JD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"黄桃","store":"果缤纷生鲜庄园","count":"4","price":"28.8/5斤\n30.91/5斤\n27.97/5斤\n26.97/5斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":3,"fruit":"桃子","variety":"桃子（小）","store":"沂蒙山小刘绿色农产品","count":"3","price":"32.9/4.5斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"桃子","variety":"黄桃","store":"少鲜队园","count":"4","price":"44.3/4.5斤\n45.8/4.5斤\n39.8/4.5斤","platform":"TB","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"桃子","variety":"桃子","store":"旭旭甄选水果生鲜旗舰店","count":"1","price":"13.2/5斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"桃子","variety":"软桃","store":"鲜果园产地直达","count":"4","price":"42.32/10斤\n22.27/5斤\n20.96/5斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"桃子","variety":"桃子（青脆）","store":"清江味道","count":"2","price":"24.9/5斤","platform":"JD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"桃子","variety":"珍珠油桃","store":"听鲜农家果园","count":"1","price":"20.8","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"梨","variety":"梨","store":"河北生态水果店","count":"4","price":"18.7/5斤","platform":"PDD","mature_months":"8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"梨","variety":"酥梨","store":"福椰靓妍专卖店","count":"1","price":"18.5","platform":"PDD","mature_months":"8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"梨","variety":"皇冠梨","store":"鑫硕丰农家店","count":"4","price":"26.95/10斤\n13.1/5斤\n24.93/10斤\n24.74/10斤","platform":"PDD","mature_months":"8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"梨","variety":"贡梨（酥梨）","store":"泽香生鲜旗舰店","count":"3","price":"32.42/10斤\n26.52/10斤\n29.48/10斤","platform":"PDD","mature_months":"8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"梨","variety":"新疆香梨","store":"兴果果汇_208593","count":"2","price":"23.6","platform":"PDD","mature_months":"8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"梨","variety":"皇冠梨","store":"慧慧鲜果小店铺","count":"3","price":"11.22/5斤\n11.3/5斤\n6.8/5斤","platform":"PDD","mature_months":"8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"梨","variety":"秋月梨","store":"魅农生机水果专卖店","count":"3","price":"34.77/5斤\n34.8/5斤\n29.8/5斤","platform":"PDD","mature_months":"8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"梨","variety":"南国梨（东北特产）","store":"丰农禾","count":"3","price":"17.7/5斤\n21.8/5斤","platform":"PDD","mature_months":"8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"梨","variety":"秋月梨","store":"美地源土特产","count":"11","price":"28.6/5斤\n35.32/5斤\n36.8/5斤","platform":"PDD","mature_months":"8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"苹果","variety":"苹果","store":"王掌柜水果生鲜官方旗舰店","count":"3","price":"16.9\n18.9","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":4,"fruit":"苹果","variety":"苹果","store":"喜洋洋鲜果直卖_980632","count":"2","price":"12.6/5斤\n15.8/5斤","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"苹果","variety":"青苹果","store":"农牌官方旗舰店","count":"1","price":"10.49/5斤","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"苹果","variety":"苹果","store":"枝纯鲜果","count":"3","price":"19.8/5斤","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"苹果","variety":"苹果","store":"中果农茂官方旗舰店","count":"3","price":"13.3/5斤\n9.9/3斤","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"苹果","variety":"苹果（进口）","store":"藏龙鲜果零食店","count":"1","price":"28/5个","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"苹果","variety":"苹果","store":"陕西鲜果园","count":"4","price":"18.57/5斤\n19.8/5斤\n14.8/5斤","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"苹果","variety":"秦冠苹果（粉面）","store":"西北鲜果铺子","count":"4","price":"22.5/10斤\n10.5/3斤\n21.6/10斤","platform":"","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"苹果","variety":"秦冠苹果（粉面）","store":"西北鲜果铺子","count":"2","price":"17.3/10斤\n22.3/10斤","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"苹果","variety":"秦冠苹果（粉面）","store":"六小神农水果官方旗舰店","count":"2","price":"18.52/5斤\n17.68/5斤","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"苹果","variety":"冰糖心","store":"敬乐霏水果生鲜专营店","count":"3","price":"18.9/10斤\n19.8/10斤\n17.9/10斤","platform":"PDD","mature_months":"8,9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"葡萄","variety":"阳光玫瑰","store":"珍果鲜园","count":"1","price":"21.8/3斤","platform":"PDD","mature_months":"7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"葡萄","variety":"阳光玫瑰","store":"张芹的农村生活的店","count":"6","price":"25.9/4.5斤\n29.9/4.5斤\n38.9/4.5斤\n35.9/4.5斤\n34.9/4.5斤\n44.5/4.5斤","platform":"","mature_months":"7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"葡萄","variety":"水晶葡萄","store":"黔南味道","count":"3","price":"36.43\n34.8\n55.79","platform":"PDD","mature_months":"7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"葡萄","variety":"阳光玫瑰","store":"小白爱吃葡萄","count":"1","price":"13.8/3斤","platform":"PDD","mature_months":"7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"葡萄","variety":"阳光玫瑰","store":"乾益生鲜","count":"1","price":"18.5","platform":"PDD","mature_months":"7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"芭乐","variety":"芭乐（红白）","store":"胭脂红红宝石番石榴","count":"3","price":"45.8/5斤\n43.5/斤\n34.5/斤","platform":"PDD","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":5,"fruit":"芭乐","variety":"芭乐（白软）","store":"邓大叔官方旗舰店_5383","count":"4","price":"28.72/5斤\n20.77/5斤\n19.79/5斤","platform":"","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐","store":"果香园番石榴铺","count":"3","price":"18.6/5斤\n14.1/5斤","platform":"","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐（白心）","store":"果之野官方旗舰店","count":"1","price":"15.32/5斤","platform":"PDD","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐（红心）","store":"榴果山水果生鲜官方旗舰店","count":"1","price":"39.3/5斤","platform":"","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐（白）","store":"钐沐果园","count":"","price":"","platform":"TB","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐（白）","store":"南方水果园","count":"2","price":"29.8/5斤\n29.24/5斤","platform":"JD","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐（红白）","store":"哟味蕾水果生鲜旗舰店","count":"2","price":"38.79/10斤\n22.09/5斤","platform":"PDD","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐","store":"长泰觅臻果基地","count":"3","price":"32.81/5斤\n29.81/5斤\n31.81/5斤","platform":"TB","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐（红心）","store":"果优星水果生鲜旗舰店","count":"3","price":"29.18/5斤\n31.33/5斤","platform":"PDD","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐（白心）","store":"鲜果坊9","count":"2","price":"21.4/5斤\n15.4/5斤","platform":"PDD","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"芭乐","variety":"芭乐（红软）","store":"初心水果特产","count":"4","price":"31.6/5斤\n23.6/5斤\n25.25/5斤","platform":"PDD","mature_months":"1,9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"李子","variety":"李子","store":"能哥良心水果店","count":"2","price":"21.8\n20.87","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"李子","variety":"李子","store":"猪大肠果农","count":"2","price":"23.9/5斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"李子","variety":"酸甜离核","store":"宇宙山川","count":"2","price":"25.37/5斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"李子","variety":"李子","store":"企业店","count":"","price":"25.37/5斤","platform":"","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"李子","variety":"李子（四川脱骨）","store":"好吃美味农家果园","count":"2","price":"15.6/5斤","platform":"PDD","mature_months":"7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"枣","variety":"冬枣","store":"临猗县新平冬枣种植专业合作社","count":"1","price":"88/5斤","platform":"DY","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"枣","variety":"元谋牛奶大青枣","store":"元之原味生鲜官方旗舰店","count":"3","price":"15.9","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":6,"fruit":"枣","variety":"青枣","store":"醉美味生鲜旗舰店","count":"2","price":"15/3斤\n13.5/3斤","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"百香果","variety":"百香果","store":"来宾惠选","count":"1","price":"13.8/11个","platform":"JD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"百香果","variety":"百香果","store":"友鲜旗舰店","count":"","price":"25.8/3斤","platform":"","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"百香果","variety":"百香果","store":"小兔村旗舰店","count":"2","price":"29.8/5斤\n30.8/5斤","platform":"","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"杨桃","variety":"杨桃","store":"鲜款生鲜旗舰店","count":"3","price":"24.75/5斤\n23.86/5斤\n22.24/5斤","platform":"PDD","mature_months":"8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"杨桃","variety":"杨桃","store":"胡鲜森旗舰店","count":"1","price":"14.8/3斤","platform":"","mature_months":"8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"人参果","variety":"人参果","store":"漠农优鲜","count":"1","price":"41.5/9斤","platform":"PDD","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"人参果","variety":"人参果","store":"池雨生鲜优选","count":"2","price":"16.9\n17.9","platform":"","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"人参果","variety":"人参果","store":"云南林垦农场","count":"3","price":"15.6","platform":"PDD","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"人参果","variety":"人参果","store":"臻味甘小鲜","count":"4","price":"34.9/5斤\n35.9/5斤\n33.9/5斤","platform":"","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"人参果","variety":"人参果","store":"宁可为生鲜店","count":"2","price":"26.8/4.5斤","platform":"","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"人参果","variety":"民勤人参果","store":"民勤沙漠变绿洲","count":"3","price":"26.6/4.5斤\n32.9/4.5斤\n18.8/5斤","platform":"TB","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"雪莲果","variety":"雪莲果","store":"王小二e店_5136","count":"3","price":"13.9/10斤\n10.9/10斤","platform":"PDD","mature_months":"10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"白薯","variety":"白薯","store":"三歆企业店","count":"8","price":"15.4/4斤","platform":"DY","mature_months":"1,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"番茄","variety":"番茄","store":"老玖果蔬","count":"2","price":"24.7\n26","platform":"PDD","mature_months":"6,7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"番茄","variety":"小番茄","store":"恬小鲜官方旗舰店","count":"","price":"9.8/5斤","platform":"DY","mature_months":"6,7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"番茄","variety":"小番茄","store":"珊珊鲜果业","count":"2","price":"14.7\n14.9","platform":"PDD","mature_months":"6,7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"番茄","variety":"铁皮柿子","store":"唐大雷旗舰店","count":"4","price":"38.4\n39.19\n37.18","platform":"PDD","mature_months":"6,7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"沃柑","variety":"沃柑","store":"木语溪水果生鲜官方旗舰店","count":"2","price":"16.9/5斤\n17.5/5斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":7,"fruit":"沃柑","variety":"沃柑","store":"御品一园生鲜旗舰店","count":"2","price":"24.8/8斤\n26.9/8斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"沃柑","variety":"沃柑","store":"双苑水果生鲜官方旗舰店","count":"3","price":"6.9/5斤\n8.3/5斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"沃柑","variety":"武鸣沃柑","store":"蔬然多SHURAND水果生鲜旗舰店","count":"4","price":"18.8/10斤\n18.9/10斤\n20.8/10斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"沃柑","variety":"武鸣沃柑","store":"甘福园旗舰店","count":"3","price":"19.8/5斤\n33.8/10斤","platform":"TB","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"柿子","variety":"脆柿","store":"青青庭","count":"3","price":"21.8/10斤\n23.77/10斤","platform":"PDD","mature_months":"10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"柿子","variety":"巧克力脆柿（陕西阳丰）","store":"果格格秦果时光","count":"3","price":"18.9/5斤\n16.9/5斤","platform":"DY?","mature_months":"10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"石榴","variety":"石榴","store":"竹蜜旗舰店","count":"2","price":"","platform":"PDD","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"石榴","variety":"石榴","store":"田季鲜","count":"2","price":"18.8/4.6斤\n16.95/4.6斤","platform":"TB","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"石榴","variety":"石榴","store":"农哥哥果蔬","count":"2","price":"9.9/5斤","platform":"PDD","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"石榴","variety":"突尼斯软籽石榴","store":"京东超市","count":"3","price":"15.47/4.5斤\n14.91/5斤\n13.93/5斤","platform":"JD","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"石榴","variety":"突尼斯软籽石榴","store":"突尼斯软籽石榴基地直发","count":"1","price":"48.71/10斤","platform":"TB","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"石榴","variety":"会理软籽石榴","store":"树品源","count":"3","price":"27.91/4.5斤\n28.8/5斤","platform":"DY天猫?","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"火龙果","variety":"火龙果","store":"火龙果生态园","count":"4","price":"15.21/5斤\n14.89/斤\n15.89/斤","platform":"PDD","mature_months":"7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"火龙果","variety":"火龙果","store":"火龙果直供店","count":"7","price":"13.9/5斤\n16.73/5斤\n20.5/5斤\n16.29/5斤\n16.3/5斤","platform":"PDD","mature_months":"7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"橙子","variety":"橙子","store":"沐源甄选","count":"2","price":"29.6/10斤\n19.8/5斤","platform":"DY","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":8,"fruit":"橙子","variety":"冰糖橙（个头小）","store":"小兔村旗舰店","count":"4","price":"6.41/5斤\n9.9/5斤","platform":"TB","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"果冻橙","store":"三鲜森农民水果店","count":"3","price":"95.88\n71.91\n24.98","platform":"PDD","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"果冻橙","store":"盘果果之家","count":"2","price":"30.8/10斤\n30.13/10斤","platform":"PDD","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"冰糖橙","store":"果仁伊果园基地","count":"6","price":"12.5/10斤\n19.38/10斤\n16.8/10斤\n20.8/10斤","platform":"PDD","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"橙子","store":"野猪啾一","count":"","price":"","platform":"DY","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"橙子","store":"南恩金果","count":"1","price":"22.9/5斤","platform":"DY","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"橙子","store":"跑山熊农产品甄选","count":"2","price":"66.8/9斤","platform":"DY","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"果冻橙","store":"果味相逢","count":"2","price":"30.6\n19.7","platform":"PDD","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"果冻橙","store":"果蜜佳旗舰店","count":"4","price":"48.9/8斤","platform":"TB","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"橙子","store":"橙上良品果园","count":"","price":"","platform":"PDD","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"橙子","store":"橙心橙义","count":"2","price":"28.56/10斤\n25.57/10斤","platform":"PDD","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"冰糖橙","store":"百鲜荟官方旗舰店","count":"3","price":"32.17/9斤\n34.86/9斤\n36.06/9斤","platform":"PDD","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"橙子","variety":"麻阳冰糖橙","store":"名字瞎取的","count":"3","price":"48/10斤PDD\n27.26/5斤\n24.24/5斤","platform":"","mature_months":"1,2,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"甜瓜","variety":"甜瓜","store":"蒂一物语官方旗舰店","count":"2","price":"22.6/10斤\n22.9/10斤","platform":"PDD","mature_months":"6,7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"甜瓜","variety":"甜瓜","store":"民勤果蔬供应","count":"1","price":"13.31/10斤","platform":"PDD","mature_months":"6,7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"甜瓜","variety":"玉菇甜瓜","store":"奇奇果乐","count":"2","price":"20.8\n7.79","platform":"PDD","mature_months":"6,7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"甜瓜","variety":"民勤密瓜","store":"农香鲜水果店","count":"1","price":"15.6","platform":"PDD","mature_months":"6,7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":9,"fruit":"柑","variety":"皇帝柑","store":"闰土水果生鲜","count":"3","price":"11.97/5斤\n12.6/5斤\n9.7/5斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"柑","variety":"皇帝柑（爆炸甜）","store":"京喜自营官方店","count":"1","price":"6.33","platform":"JD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"柑","variety":"皇帝柑","store":"优多匠果","count":"4","price":"15.79/3斤\n15.8/3斤\n19.79/5斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"柑","variety":"皇帝柑","store":"香香A果","count":"3","price":"9.9/10斤\n51.8/20斤\n20.9/10斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"柑","variety":"皇帝柑（广西）","store":"岭南果水果生鲜官方旗舰店","count":"3","price":"29.9/10斤\n299.9/10斤\n29.49/10斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"柑","variety":"皇帝柑（广东德庆）","store":"农果妞官方旗舰店","count":"3","price":"39.6/9.2斤\n39.94/9.2斤\n40.76/9.2斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"柑","variety":"油柑","store":"聚鲜品农业","count":"2","price":"22.04/5斤\n12.98/3斤","platform":"PDD","mature_months":"1,2,3,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"柠檬","variety":"柠檬","store":"集妙果旗舰店","count":"1","price":"18.8/5.5斤","platform":"PDD","mature_months":"9,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"猕猴桃","store":"旭心水果旗舰店","count":"3","price":"16.5/27枚\n27.8/18枚","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"猕猴桃","store":"夹关镇猕二代","count":"","price":"","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"猕猴桃","store":"纪鲜森水果生鲜官方旗舰店","count":"4","price":"11.8\n24.9","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"徐香猕猴桃","store":"优壹果","count":"3","price":"27.36/5斤","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"陕西周至","store":"轩源鲜果","count":"3","price":"44.8/5斤","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"翠香猕猴桃","store":"园","count":"","price":"41.8/5斤\n39.8/5斤","platform":"","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"徐香猕猴桃","store":"愚农人种的猕猴桃","count":"4","price":"34.36/4.9斤\n34.92/4.9斤","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"猕猴桃（淄博博山）","store":"执扇18","count":"3","price":"25/5斤\n47/10斤\n30/5斤","platform":"TB","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"猕猴桃","store":"祺唯鲜果官方旗舰店","count":"1","price":"","platform":"PDD（应季发）","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":10,"fruit":"猕猴桃","variety":"猕猴桃（丹东）","store":"果唯壹水果生鲜","count":"3","price":"31.9\n39.8","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"橘子","variety":"丑橘","store":"喜帖果铺","count":"3","price":"32.8/10斤\n18.8/5斤","platform":"JD","mature_months":"1,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"橘子","variety":"青皮橘子","store":"悠悠鲜果园","count":"1","price":"16.8","platform":"PDD","mature_months":"1,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"橘子","variety":"青皮橘子（酸甜）","store":"橙乡汪妈妈","count":"3","price":"19.9/5.5斤\n18.9/5斤","platform":"PDD","mature_months":"1,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"橘子","variety":"青皮橘子（酸甜）","store":"华姐姐果蔬","count":"2","price":"9.11/5.5斤\n0.88/1斤","platform":"PDD","mature_months":"1,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"柚子","variety":"黄金贡柚","store":"青果农夫生鲜","count":"1","price":"51.9/5斤","platform":"","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"柚子","variety":"葡萄柚（甜）","store":"姚鼎记水果生鲜官方旗舰店","count":"4","price":"24.8\n29.9","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"柚子","variety":"福建平和管溪红柚","store":"集锦园水果生鲜旗舰店","count":"4","price":"27.8/\n9.8\n12.43\n27.8","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"柚子","variety":"福建平和管溪红柚","store":"背靠三大山","count":"3","price":"19.8/9斤","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"柚子","variety":"红心柚","store":"农夫农产品果园","count":"3","price":"7.69/5斤","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"柚子","variety":"文旦柚","store":"果艺轩水果生鲜","count":"2","price":"73/18斤\n76.8/18斤","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"柚子","variety":"福建红心柚","store":"滇圣旗舰店","count":"3","price":"18.8/9斤\n22.8/9斤\n23.8/9斤","platform":"TB","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"柚子","variety":"黄金贡柚（湖南怀化）","store":"一个村的店","count":"1","price":"19.7/9斤","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"柚子","variety":"福建平和管溪红柚","store":"一品贡果","count":"4","price":"18.8\n23.6","platform":"PDD","mature_months":"9,10,11","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"姑娘果","variety":"姑娘果","store":"璃阳食品小店","count":"1","price":"","platform":"PDD","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"姑娘果","variety":"姑娘果","store":"友东商贸","count":"2","price":"15.94/2斤\n8.44/1斤","platform":"PDD","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"姑娘果","variety":"姑娘果","store":"甜姥爷官方旗舰店","count":"3","price":"23.6/2.8斤\n17.9/1.8斤\n23.5/3斤","platform":"PDD","mature_months":"9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":11,"fruit":"香蕉","variety":"香蕉","store":"火爵官方旗舰店","count":"1","price":"18.9/5斤","platform":"PDD","mature_months":"7,8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"香蕉","variety":"香蕉","store":"俊怡生鲜旗舰店","count":"1","price":"29.9/5斤","platform":"DY","mature_months":"7,8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"香蕉","variety":"香蕉（云南）","store":"悠果农特","count":"3","price":"24.8","platform":"PDD","mature_months":"7,8,9,10","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"芋头","variety":"芋头","store":"荔浦云成农业","count":"3","price":"29","platform":"PDD","mature_months":"","month_note":"水果成熟月份总结.pdf 未收录该水果大类"},{"source_page":12,"fruit":"榴莲","variety":"榴莲","store":"血狼（血狼榴莲）","count":"1","price":"","platform":"DY 个人用户","mature_months":"6,7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"菠萝蜜","variety":"果味鲜园","store":"3","count":"40.6/14斤","price":"","platform":"果味鲜园","mature_months":"6,7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"龙眼","variety":"龙眼","store":"荆州市筠子园生态农业有限责任公司","count":"2","price":"9.9/1斤","platform":"JD","mature_months":"8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"菠萝","variety":"凤梨","store":"南瑞水果店","count":"4","price":"23.16/5斤\n24.12/5斤\n28.96/5斤","platform":"PDD","mature_months":"4,5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"菠萝","variety":"菠萝","store":"美滋果果","count":"2","price":"10.9/5斤\n9.9/5斤","platform":"PDD","mature_months":"4,5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"南瓜","variety":"贝贝南瓜","store":"乐胜食品生鲜专营店","count":"2","price":"10.2/3斤","platform":"PDD","mature_months":"","month_note":"水果成熟月份总结.pdf 未收录该水果大类"},{"source_page":12,"fruit":"南瓜","variety":"贝贝南瓜","store":"青州冬雪蜜","count":"5","price":"10.69/3斤\n13.49/5斤\n10.99/5斤\n11.55/5斤","platform":"PDD","mature_months":"","month_note":"水果成熟月份总结.pdf 未收录该水果大类"},{"source_page":12,"fruit":"南瓜","variety":"贝贝南瓜","store":"格调西域水果生鲜官方旗舰店","count":"2","price":"25.6/9斤\n22.1/9斤","platform":"PDD","mature_months":"","month_note":"水果成熟月份总结.pdf 未收录该水果大类"},{"source_page":12,"fruit":"荔枝","variety":"荔枝","store":"小农兔生鲜旗舰店","count":"3","price":"46.6/5斤\n57.7/5斤\n57.5/5斤","platform":"","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"荔枝","variety":"荔枝","store":"中源果农生鲜","count":"3","price":"55.5/4.5斤\n58.5/4.5斤","platform":"DY?","mature_months":"5,6,7","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"红薯","variety":"红薯","store":"胖胖农家店","count":"2","price":"40.95/10斤\n40.91/10斤","platform":"PDD","mature_months":"1,10,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"玉米","variety":"玉米","store":"瑞玲珑食品旗舰店","count":"4","price":"19.9/2.2kg\n24.87\n26.37","platform":"PDD","mature_months":"6,7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":12,"fruit":"玉米","variety":"玉米","store":"棒小吉","count":"9","price":"67.39/24根\n45.26/16根\n25.4/8根\n48.26/16根\n22.86/8根\n24.13/8根\n24.4/8根","platform":"PDD","mature_months":"6,7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":13,"fruit":"玉米","variety":"甜玉米（云南）","store":"蜀果派官方旗舰店","count":"2","price":"26.9\n17.8","platform":"PDD","mature_months":"6,7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":13,"fruit":"枇杷","variety":"枇杷","store":"杨小二云南水果专卖店","count":"3","price":"58.8/5斤\n33.8/3斤\n56.81/3斤","platform":"","mature_months":"4,5","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":13,"fruit":"木瓜","variety":"木瓜","store":"梁栋家的果园","count":"2","price":"10.3/4.5斤\n10.3/5斤","platform":"PDD","mature_months":"8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":13,"fruit":"甘蔗","variety":"甘蔗","store":"农振生鲜","count":"3","price":"19.8/10斤","platform":"PDD","mature_months":"1,2,11,12","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":13,"fruit":"椰子","variety":"椰子","store":"果珍轩商店","count":"1","price":"20.22/3个","platform":"PDD","mature_months":"7,8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":13,"fruit":"大樱桃","variety":"大连大樱桃","store":"0411德正大连德正樱桃","count":"1","price":"45","platform":"TB","mature_months":"5,6","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":13,"fruit":"哈密瓜","variety":"网纹瓜","store":"瑞雪四季鲜果","count":"1","price":"18.11/8斤","platform":"PDD","mature_months":"8,9","month_note":"成熟月份来源：水果成熟月份总结.pdf"},{"source_page":13,"fruit":"菠萝蜜","variety":"越南进口","store":"甜果儿菠萝蜜","count":"1","price":"56.27","platform":"PDD","mature_months":"6,7,8","month_note":"成熟月份来源：水果成熟月份总结.pdf"}];
+    const importPassword = "haodan666";
+    const storageKey = "fruit_app_imported_rows_v3";
+    const metricsKey = "fruit_app_usage_metrics_v1";
+    let sourceRows = loadStoredRows() || embeddedRows;
+    let sourceName = loadStoredRows() ? "已导入数据" : "内置数据";
+    let usageMetrics = loadUsageMetrics();
+    let fruitCards = [];
+
+    const monthOptions = ["全部", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "全年"];
+    const state = {
+      fruit: "全部",
+      month: "全部",
+      platform: "全部",
+      query: ""
+    };
+
+    const fruitThemes = {
+      "芒果": ["#b76b00", "#fff0c8", "#e4bd70", "#4b3000"],
+      "桃子": ["#c45f6f", "#ffe3e8", "#e8a9b4", "#5a1f2a"],
+      "梨": ["#7f9221", "#f1f7d8", "#c8d685", "#31410c"],
+      "苹果": ["#b93835", "#ffe1dc", "#e29a92", "#571612"],
+      "葡萄": ["#6f45a5", "#efe4ff", "#bca5df", "#321850"],
+      "芭乐": ["#c65f78", "#ffe5ed", "#e7a9b9", "#5c1e31"],
+      "李子": ["#714094", "#f2e4fb", "#c2a1da", "#311844"],
+      "枣": ["#93432d", "#fde5d8", "#d5a18e", "#42190f"],
+      "百香果": ["#8b5a13", "#ffefc8", "#d8b16d", "#3d2506"],
+      "杨桃": ["#9b8614", "#fff5c9", "#d6c978", "#403707"],
+      "人参果": ["#a27642", "#f6ead8", "#d7b991", "#463015"],
+      "雪莲果": ["#70845f", "#edf4e8", "#b5c8aa", "#273620"],
+      "白薯": ["#a55a40", "#fde7db", "#d9a28f", "#471f13"],
+      "番茄": ["#bd3c32", "#ffe3df", "#e29a92", "#581711"],
+      "沃柑": ["#c96f09", "#ffe8cb", "#e2b16e", "#4b2a02"],
+      "柿子": ["#bf6a1c", "#ffe7d2", "#dfad78", "#4e2608"],
+      "石榴": ["#af2341", "#ffe1e8", "#de96a8", "#510c1c"],
+      "火龙果": ["#bd2671", "#ffe2ef", "#df9abd", "#540d32"],
+      "橙子": ["#c86a04", "#ffe7c5", "#e3ae68", "#4a2700"],
+      "甜瓜": ["#789a2e", "#edf7d8", "#bfd489", "#2d3f0f"],
+      "柑": ["#c97800", "#ffe9c9", "#e2b576", "#4c2d00"],
+      "油柑": ["#7f982a", "#eef7d7", "#c1d488", "#2e3b0d"],
+      "柠檬": ["#a99200", "#fff6bf", "#d9ca69", "#443a00"],
+      "猕猴桃": ["#678927", "#edf5d8", "#b7cd86", "#28380e"],
+      "橘子": ["#c97004", "#ffe8c8", "#e3b16e", "#4c2a00"],
+      "柚子": ["#8d9a25", "#f2f8d5", "#c9d87c", "#35400b"],
+      "姑娘果": ["#c98200", "#ffedc6", "#e2bd72", "#4d3100"],
+      "香蕉": ["#b99700", "#fff4bf", "#dcca69", "#443700"],
+      "芋头": ["#8060a5", "#eee6fb", "#baa6da", "#311f4a"],
+      "榴莲": ["#85831f", "#f3f3c9", "#cbc970", "#353407"],
+      "菠萝蜜": ["#b98418", "#fff0c9", "#d9b36e", "#442f06"],
+      "龙眼": ["#956434", "#f7e5d3", "#d2a982", "#3c2410"],
+      "菠萝": ["#aa8d00", "#fff4c7", "#d8c56f", "#3e3400"],
+      "南瓜": ["#bd6815", "#ffe7d1", "#dfac77", "#4c2605"],
+      "荔枝": ["#bc3a52", "#ffe2e9", "#e099a8", "#551321"],
+      "红薯": ["#a75243", "#fde5dc", "#d9a094", "#461c14"],
+      "玉米": ["#b79700", "#fff4bd", "#dcc866", "#443800"],
+      "枇杷": ["#cb831b", "#ffedcf", "#e3ba7b", "#4b2f08"],
+      "木瓜": ["#bd7020", "#ffe8d4", "#dfb07c", "#4b2a08"],
+      "甘蔗": ["#5f8f60", "#e8f4e7", "#a9c8a8", "#1e3d1f"],
+      "椰子": ["#80684b", "#f0e7d9", "#c4ad8d", "#322416"],
+      "大樱桃": ["#a91f38", "#ffe0e6", "#dd94a2", "#4e0b18"],
+      "哈密瓜": ["#829f3d", "#f0f7d9", "#bfd38c", "#304211"]
+    };
+    const fallbackTheme = ["#276749", "#e8f3e2", "#c6dac0", "#17321f"];
+
+    const fruitFilter = document.getElementById("fruitFilter");
+    const monthFilter = document.getElementById("monthFilter");
+    const searchInput = document.getElementById("searchInput");
+    const monthRail = document.getElementById("monthRail");
+    const platformRail = document.getElementById("platformRail");
+    const list = document.getElementById("list");
+    const empty = document.getElementById("empty");
+    const detailMask = document.getElementById("detailMask");
+    const importMask = document.getElementById("importMask");
+    const detailGrid = document.getElementById("detailGrid");
+    const dataStatus = document.getElementById("dataStatus");
+    const importStatus = document.getElementById("importStatus");
+    const passwordInput = document.getElementById("passwordInput");
+    const excelInput = document.getElementById("excelInput");
+    const downloadStatus = document.getElementById("downloadStatus");
+
+    function dash(value) {
+      const text = value == null ? "" : String(value).trim();
+      return text || "未标注";
+    }
+
+    function normalizePlatform(value) {
+      const text = dash(value).replace(/\?/g, "？").toUpperCase();
+      if (text.includes("PDD")) return "PDD";
+      if (text.includes("JD")) return "JD";
+      if (text.includes("TB") || text.includes("天猫")) return "TB";
+      if (text.includes("DY") || text.includes("抖音")) return "DY";
+      return "未标注";
+    }
+
+    function parseCount(value) {
+      const match = String(value || "").match(/\d+/);
+      return match ? Number(match[0]) : 0;
+    }
+
+    function monthLabel(value) {
+      if (value === "全部") return "全部月份";
+      if (value === "全年") return "全年可买";
+      return `${value}月`;
+    }
+
+    function monthsText(value) {
+      const text = dash(value);
+      if (text === "全年") return "全年";
+      const months = text.split(",").filter(month => /^\d+$/.test(month));
+      return months.length ? months.map(month => `${month}月`).join("、") : "未收录";
+    }
+
+    function itemInMonth(item, month) {
+      if (month === "全部") return true;
+      if (item.mature_months === "全年") return true;
+      if (month === "全年") return item.mature_months === "全年";
+      return String(item.mature_months || "").split(",").includes(month);
+    }
+
+    function themeFor(fruit) {
+      return fruitThemes[fruit] || fallbackTheme;
+    }
+
+    function applyFruitTheme(element, fruit) {
+      const [main, soft, line, ink] = themeFor(fruit);
+      element.style.setProperty("--fruit-main", main);
+      element.style.setProperty("--fruit-soft", soft);
+      element.style.setProperty("--fruit-line", line);
+      element.style.setProperty("--fruit-ink", ink);
+    }
+
+    function loadStoredRows() {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed.rows) ? parsed.rows : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function loadUsageMetrics() {
+      try {
+        const raw = localStorage.getItem(metricsKey);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return {
+          views: Number(parsed.views || 0),
+          downloads: Number(parsed.downloads || 0)
+        };
+      } catch {
+        return { views: 0, downloads: 0 };
+      }
+    }
+
+    function saveUsageMetrics() {
+      try {
+        localStorage.setItem(metricsKey, JSON.stringify(usageMetrics));
+      } catch {}
+    }
+
+    function recordPageView() {
+      usageMetrics.views += 1;
+      saveUsageMetrics();
+    }
+
+    function formatNumber(value) {
+      return Number(value || 0).toLocaleString("zh-CN");
+    }
+
+    function renderUsageMetrics() {
+      document.getElementById("viewCount").textContent = formatNumber(usageMetrics.views);
+      document.getElementById("downloadCount").textContent = formatNumber(usageMetrics.downloads);
+    }
+
+    function setDownloadStatus(text, isError = false) {
+      downloadStatus.textContent = text;
+      downloadStatus.classList.toggle("error", isError);
+    }
+
+    function setDataStatus(text, isWarning = false) {
+      dataStatus.textContent = text;
+      dataStatus.classList.toggle("warn", isWarning);
+    }
+
+    function normalizeRecord(item) {
+      return {
+        fruit: dash(item.fruit),
+        variety: dash(item.variety),
+        store: dash(item.store),
+        count: dash(item.count),
+        price: dash(item.price),
+        platform: normalizePlatform(item.platform),
+        mature_months: dash(item.mature_months),
+        month_note: dash(item.month_note),
+        source_page: dash(item.source_page)
+      };
+    }
+
+    function buildCards(rows) {
+      const groups = new Map();
+      rows.map(normalizeRecord).forEach(row => {
+        if (!groups.has(row.fruit)) groups.set(row.fruit, []);
+        groups.get(row.fruit).push(row);
+      });
+
+      return [...groups.entries()].map(([fruit, details]) => {
+        const sorted = [...details].sort((a, b) => parseCount(b.count) - parseCount(a.count) || a.store.localeCompare(b.store, "zh-CN"));
+        const months = [...new Set(details.map(item => item.mature_months).filter(Boolean))].join("、");
+        const platforms = [...new Set(details.map(item => normalizePlatform(item.platform)))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+        return { fruit, details: sorted, months, platforms };
+      }).sort((a, b) => a.fruit.localeCompare(b.fruit, "zh-CN"));
+    }
+
+    function representative(card, details) {
+      const source = details.length ? details : card.details;
+      return [...source].sort((a, b) => parseCount(b.count) - parseCount(a.count) || a.store.localeCompare(b.store, "zh-CN"))[0];
+    }
+
+    function setupFilters() {
+      const fruits = ["全部", ...fruitCards.map(card => card.fruit)];
+      state.fruit = fillSelect(fruitFilter, fruits, value => value === "全部" ? "全部水果" : value, state.fruit);
+      state.month = fillSelect(monthFilter, monthOptions, monthLabel, state.month);
+      renderMonthRail();
+      renderPlatformRail();
+    }
+
+    function fillSelect(select, values, labeler, currentValue = "全部") {
+      select.innerHTML = "";
+      values.forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = labeler(value);
+        select.appendChild(option);
+      });
+      select.value = values.includes(currentValue) ? currentValue : "全部";
+      return select.value;
+    }
+
+    function renderMonthRail() {
+      monthRail.innerHTML = "";
+      monthOptions.forEach(value => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "chip";
+        button.dataset.month = value;
+        button.textContent = value === "全部" ? "全部" : monthLabel(value);
+        button.addEventListener("click", () => {
+          state.month = value;
+          monthFilter.value = value;
+          render();
+        });
+        monthRail.appendChild(button);
+      });
+    }
+
+    function renderPlatformRail() {
+      const platforms = ["全部", ...new Set(sourceRows.map(item => normalizePlatform(item.platform)))].sort((a, b) => a === "全部" ? -1 : b === "全部" ? 1 : a.localeCompare(b, "zh-CN"));
+      if (!platforms.includes(state.platform)) state.platform = "全部";
+      platformRail.innerHTML = "";
+      platforms.forEach(value => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "chip";
+        button.dataset.platform = value;
+        button.textContent = value === "全部" ? "全部平台" : value;
+        button.addEventListener("click", () => {
+          state.platform = value;
+          render();
+        });
+        platformRail.appendChild(button);
+      });
+    }
+
+    function detailMatchesSearch(detail, query) {
+      if (!query) return true;
+      return [
+        detail.fruit,
+        detail.variety,
+        detail.store,
+        detail.price,
+        detail.count,
+        detail.mature_months,
+        detail.platform
+      ].join(" ").toLowerCase().includes(query);
+    }
+
+    function filteredCards() {
+      const query = state.query.trim().toLowerCase();
+      return fruitCards.map(card => {
+        if (state.fruit !== "全部" && card.fruit !== state.fruit) return null;
+        if (!card.details.some(detail => itemInMonth(detail, state.month))) return null;
+
+        const matchingDetails = card.details.filter(detail => {
+          if (state.platform !== "全部" && normalizePlatform(detail.platform) !== state.platform) return false;
+          if (!itemInMonth(detail, state.month)) return false;
+          return detailMatchesSearch(detail, query) || (!query && true);
+        });
+
+        const fruitNameMatches = !query || card.fruit.toLowerCase().includes(query);
+        const usableDetails = matchingDetails.length ? matchingDetails : [];
+        if (!usableDetails.length && !fruitNameMatches) return null;
+        if (state.platform !== "全部" && !usableDetails.length) return null;
+        return { ...card, visibleDetails: usableDetails.length ? usableDetails : card.details.filter(detail => itemInMonth(detail, state.month)) };
+      }).filter(Boolean);
+    }
+
+    function renderStats(cards) {
+      document.getElementById("totalCount").textContent = fruitCards.length;
+      document.getElementById("storeCount").textContent = sourceRows.length;
+      document.getElementById("visibleCount").textContent = cards.length;
+      renderUsageMetrics();
+      document.getElementById("resultText").textContent = `共 ${cards.length} 类`;
+      document.getElementById("activeText").textContent = `${state.fruit === "全部" ? "全部水果" : state.fruit} · ${monthLabel(state.month)} · ${state.platform === "全部" ? "全部平台" : state.platform}`;
+      [...monthRail.children].forEach(button => button.classList.toggle("active", button.dataset.month === state.month));
+      [...platformRail.children].forEach(button => button.classList.toggle("active", button.dataset.platform === state.platform));
+    }
+
+    function createCard(card) {
+      const top = representative(card, card.visibleDetails);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "item";
+      applyFruitTheme(button, card.fruit);
+
+      const rowTop = document.createElement("div");
+      rowTop.className = "row-top";
+      const name = document.createElement("div");
+      const fruit = document.createElement("span");
+      fruit.className = "fruit";
+      fruit.textContent = `${card.fruit} · ${card.details.length}家店`;
+      const title = document.createElement("h3");
+      title.className = "variety";
+      title.textContent = card.fruit;
+      name.append(fruit, title);
+
+      const platform = document.createElement("div");
+      platform.className = "platform";
+      platform.textContent = normalizePlatform(top.platform);
+      rowTop.append(name, platform);
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      [
+        ["购买最多店铺", dash(top.store)],
+        ["价格", dash(top.price)],
+        ["成熟月份", monthsText(card.months || top.mature_months)],
+        ["购买次数", dash(top.count)]
+      ].forEach(([label, value]) => {
+        const block = document.createElement("div");
+        const small = document.createElement("span");
+        small.textContent = label;
+        block.append(small, document.createTextNode(value));
+        meta.appendChild(block);
+      });
+
+      button.append(rowTop, meta);
+      button.addEventListener("click", () => openDetail(card));
+      return button;
+    }
+
+    function render() {
+      const cards = filteredCards();
+      renderStats(cards);
+      empty.style.display = cards.length ? "none" : "block";
+      list.innerHTML = "";
+      const fragment = document.createDocumentFragment();
+      cards.forEach(card => fragment.appendChild(createCard(card)));
+      list.appendChild(fragment);
+      setDataStatus(sourceName, sourceName === "内置数据");
+    }
+
+    function openDetail(card) {
+      applyFruitTheme(detailMask, card.fruit);
+      document.getElementById("modalTitle").textContent = card.fruit;
+      document.getElementById("modalSubtitle").textContent = `共 ${card.details.length} 家店铺`;
+      detailGrid.innerHTML = "";
+
+      card.details.forEach(detail => {
+        const box = document.createElement("article");
+        box.className = "store-detail";
+        const title = document.createElement("h3");
+        title.textContent = dash(detail.store);
+        const meta = document.createElement("div");
+        meta.className = "detail-meta";
+        [
+          ["水果品种", dash(detail.variety)],
+          ["店铺平台", normalizePlatform(detail.platform)],
+          ["价格", dash(detail.price)],
+          ["成熟月份", monthsText(detail.mature_months || card.months)],
+          ["购买次数", dash(detail.count)]
+        ].forEach(([label, value]) => {
+          const cell = document.createElement("div");
+          const small = document.createElement("span");
+          small.textContent = label;
+          cell.append(small, document.createTextNode(value));
+          meta.appendChild(cell);
+        });
+        box.append(title, meta);
+        detailGrid.appendChild(box);
+      });
+      detailMask.classList.add("show");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeDetail() {
+      detailMask.classList.remove("show");
+      document.body.style.overflow = "";
+    }
+
+    function openImport() {
+      importStatus.textContent = "";
+      importStatus.classList.remove("error");
+      passwordInput.value = "";
+      excelInput.value = "";
+      importMask.classList.add("show");
+      document.body.style.overflow = "hidden";
+      setTimeout(() => passwordInput.focus(), 0);
+    }
+
+    function closeImport() {
+      importMask.classList.remove("show");
+      document.body.style.overflow = "";
+    }
+
+    function setImportStatus(text, isError = false) {
+      importStatus.textContent = text;
+      importStatus.classList.toggle("error", isError);
+    }
+
+    async function importExcel() {
+      if (passwordInput.value !== importPassword) {
+        setImportStatus("密码不正确", true);
+        return;
+      }
+      const file = excelInput.files && excelInput.files[0];
+      if (!file) {
+        setImportStatus("请选择Excel文件", true);
+        return;
+      }
+
+      try {
+        setImportStatus("正在读取...");
+        const rows = await parseXlsxFile(file);
+        if (!rows.length) throw new Error("没有读取到水果数据");
+        sourceRows = rows;
+        sourceName = `已导入 ${file.name}`;
+        try {
+          localStorage.setItem(storageKey, JSON.stringify({ name: file.name, rows }));
+        } catch {}
+        rebuildData();
+        closeImport();
+      } catch (error) {
+        setImportStatus(error.message || "导入失败", true);
+      }
+    }
+
+    function clearImport() {
+      localStorage.removeItem(storageKey);
+      sourceRows = embeddedRows;
+      sourceName = "内置数据";
+      rebuildData();
+      closeImport();
+    }
+
+    function downloadCurrentData() {
+      const cards = filteredCards();
+      if (!cards.length) {
+        setDownloadStatus("无可下载结果", true);
+        return;
+      }
+
+      const headers = ["水果", "购买最多店铺", "店铺平台", "价格", "成熟月份", "购买次数", "店铺数量"];
+      const rows = cards.map(card => {
+        const top = representative(card, card.visibleDetails || card.details);
+        return [
+          card.fruit,
+          dash(top.store),
+          normalizePlatform(top.platform),
+          dash(top.price),
+          monthsText(card.months || top.mature_months),
+          dash(top.count),
+          card.details.length
+        ];
+      });
+      const csv = "\ufeff" + [headers, ...rows].map(row => row.map(csvCell).join(",")).join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `水果推荐_${dateStamp()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      usageMetrics.downloads += 1;
+      saveUsageMetrics();
+      renderUsageMetrics();
+      setDownloadStatus(`已下载 ${formatNumber(usageMetrics.downloads)} 次`);
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? "").replace(/\r?\n/g, " / ");
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    function dateStamp() {
+      const now = new Date();
+      const pad = value => String(value).padStart(2, "0");
+      return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+    }
+
+    function rebuildData() {
+      fruitCards = buildCards(sourceRows);
+      setupFilters();
+      render();
+    }
+
+    async function parseXlsxFile(file) {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const zip = await readZip(bytes);
+      const xml = path => {
+        const bytes = zip[path];
+        if (!bytes) throw new Error(`Excel缺少 ${path}`);
+        return new DOMParser().parseFromString(new TextDecoder("utf-8").decode(bytes), "application/xml");
+      };
+
+      const sharedStrings = parseSharedStrings(zip["xl/sharedStrings.xml"]);
+      const workbook = xml("xl/workbook.xml");
+      const rels = xml("xl/_rels/workbook.xml.rels");
+      const sheetPath = findSheetPath(workbook, rels, "水果推荐清单");
+      const sheet = xml(sheetPath);
+      const rawRows = parseSheetRows(sheet, sharedStrings);
+      return rowsFromSheet(rawRows);
+    }
+
+    async function readZip(bytes) {
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      let eocd = -1;
+      for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 66000); i--) {
+        if (view.getUint32(i, true) === 0x06054b50) {
+          eocd = i;
+          break;
+        }
+      }
+      if (eocd < 0) throw new Error("不是有效的xlsx文件");
+
+      const count = view.getUint16(eocd + 10, true);
+      const centralOffset = view.getUint32(eocd + 16, true);
+      const entries = {};
+      let offset = centralOffset;
+
+      for (let i = 0; i < count; i++) {
+        if (view.getUint32(offset, true) !== 0x02014b50) throw new Error("xlsx目录损坏");
+        const method = view.getUint16(offset + 10, true);
+        const compressedSize = view.getUint32(offset + 20, true);
+        const nameLength = view.getUint16(offset + 28, true);
+        const extraLength = view.getUint16(offset + 30, true);
+        const commentLength = view.getUint16(offset + 32, true);
+        const localOffset = view.getUint32(offset + 42, true);
+        const name = new TextDecoder("utf-8").decode(bytes.slice(offset + 46, offset + 46 + nameLength));
+
+        const localNameLength = view.getUint16(localOffset + 26, true);
+        const localExtraLength = view.getUint16(localOffset + 28, true);
+        const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+        const compressed = bytes.slice(dataStart, dataStart + compressedSize);
+
+        if (method === 0) {
+          entries[name] = compressed;
+        } else if (method === 8) {
+          entries[name] = await inflateRaw(compressed);
+        }
+        offset += 46 + nameLength + extraLength + commentLength;
+      }
+      return entries;
+    }
+
+    async function inflateRaw(bytes) {
+      if (!("DecompressionStream" in window)) throw new Error("当前浏览器不支持解析压缩xlsx");
+      const stream = new DecompressionStream("deflate-raw");
+      const output = new Response(stream.readable).arrayBuffer();
+      const writer = stream.writable.getWriter();
+      await writer.write(bytes);
+      await writer.close();
+      return new Uint8Array(await output);
+    }
+
+    function parseSharedStrings(bytes) {
+      if (!bytes) return [];
+      const doc = new DOMParser().parseFromString(new TextDecoder("utf-8").decode(bytes), "application/xml");
+      return xmlElements(doc, "si").map(si => xmlElements(si, "t").map(t => t.textContent || "").join(""));
+    }
+
+    function xmlElements(root, localName) {
+      return [...root.getElementsByTagName("*")].filter(element => element.localName === localName);
+    }
+
+    function findSheetPath(workbook, rels, desiredName) {
+      const relMap = {};
+      xmlElements(rels, "Relationship").forEach(rel => {
+        relMap[rel.getAttribute("Id")] = rel.getAttribute("Target") || "";
+      });
+      const sheets = xmlElements(workbook, "sheet");
+      const selected = sheets.find(sheet => sheet.getAttribute("name") === desiredName) || sheets[0];
+      if (!selected) throw new Error("Excel中没有工作表");
+      const relId = selected.getAttribute("r:id") || selected.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+      let target = relMap[relId];
+      if (!target) throw new Error("找不到水果推荐清单");
+      target = target.replace(/\\/g, "/");
+      if (target.startsWith("/")) return target.slice(1);
+      return target.startsWith("xl/") ? target : `xl/${target}`;
+    }
+
+    function parseSheetRows(sheet, sharedStrings) {
+      return xmlElements(sheet, "row").map(row => {
+        const values = {};
+        let max = 0;
+        xmlElements(row, "c").forEach(cell => {
+          const ref = cell.getAttribute("r") || "";
+          const col = columnNumber(ref);
+          if (!col) return;
+          values[col] = cellValue(cell, sharedStrings);
+          max = Math.max(max, col);
+        });
+        return Array.from({ length: max }, (_, index) => values[index + 1] || "");
+      });
+    }
+
+    function columnNumber(ref) {
+      const match = String(ref).match(/[A-Z]+/);
+      if (!match) return 0;
+      return [...match[0]].reduce((sum, char) => sum * 26 + char.charCodeAt(0) - 64, 0);
+    }
+
+    function cellValue(cell, sharedStrings) {
+      const type = cell.getAttribute("t");
+      if (type === "inlineStr") return xmlElements(cell, "t").map(t => t.textContent || "").join("");
+      const value = xmlElements(cell, "v")[0]?.textContent || "";
+      if (type === "s") return sharedStrings[Number(value)] || "";
+      return value.endsWith(".0") ? value.slice(0, -2) : value;
+    }
+
+    function rowsFromSheet(rows) {
+      const headerIndex = rows.findIndex(row => row.includes("水果") && row.includes("水果品种") && row.includes("店铺名称"));
+      if (headerIndex < 0) throw new Error("Excel缺少水果推荐清单表头");
+      const headers = rows[headerIndex].map(value => String(value).trim());
+      const fieldIndex = {};
+      const aliases = {
+        fruit: ["水果"],
+        variety: ["水果品种"],
+        store: ["店铺名称"],
+        platform: ["店铺平台"],
+        price: ["价格/元（PDF原文）", "价格/元(PDF原文)", "价格"],
+        count: ["购买次数"],
+        mature_months: ["成熟月份"]
+      };
+      Object.entries(aliases).forEach(([field, names]) => {
+        fieldIndex[field] = headers.findIndex(header => names.includes(header));
+      });
+      const missing = Object.entries(fieldIndex).filter(([, index]) => index < 0).map(([field]) => field);
+      if (missing.length) throw new Error("Excel表头不完整");
+
+      return rows.slice(headerIndex + 1).map(row => {
+        const get = field => String(row[fieldIndex[field]] || "").trim();
+        return {
+          fruit: get("fruit"),
+          variety: get("variety"),
+          store: get("store"),
+          platform: get("platform"),
+          price: get("price"),
+          count: get("count"),
+          mature_months: get("mature_months")
+        };
+      }).filter(row => row.fruit || row.store || row.variety);
+    }
+
+    fruitFilter.addEventListener("change", event => {
+      state.fruit = event.target.value;
+      render();
+    });
+    monthFilter.addEventListener("change", event => {
+      state.month = event.target.value;
+      render();
+    });
+    searchInput.addEventListener("input", event => {
+      state.query = event.target.value;
+      render();
+    });
+    document.getElementById("openImport").addEventListener("click", openImport);
+    document.getElementById("downloadData").addEventListener("click", downloadCurrentData);
+    document.getElementById("closeImport").addEventListener("click", closeImport);
+    document.getElementById("importExcel").addEventListener("click", importExcel);
+    document.getElementById("clearImport").addEventListener("click", clearImport);
+    document.getElementById("closeDetail").addEventListener("click", closeDetail);
+    detailMask.addEventListener("click", event => {
+      if (event.target === detailMask) closeDetail();
+    });
+    importMask.addEventListener("click", event => {
+      if (event.target === importMask) closeImport();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeDetail();
+        closeImport();
+      }
+    });
+
+    recordPageView();
+    rebuildData();
+  </script>
+</body>
+</html>
