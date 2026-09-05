@@ -835,7 +835,7 @@
 
     <main>
       <section class="stats" aria-label="数据概览">
-        <div class="stat"><span>水果品种</span><strong id="totalCount">0</strong></div>
+        <div class="stat"><span>水果大类</span><strong id="totalCount">0</strong></div>
         <div class="stat"><span>店铺记录</span><strong id="storeCount">0</strong></div>
         <div class="stat"><span>当前结果</span><strong id="visibleCount">0</strong></div>
         <div class="stat"><span>浏览量</span><strong id="viewCount">0</strong></div>
@@ -908,12 +908,15 @@
     });
     const cloudDatasetId = "current";
     const cloudPollInterval = 30000;
-    const storageKey = "fruit_app_imported_rows_v3";
+    const storageKey = "fruit_app_imported_rows_v6";
     const metricsKey = "fruit_app_usage_metrics_v1";
-    let sourceRows = loadStoredRows() || embeddedRows;
-    let sourceName = loadStoredRows() ? "已导入数据" : "内置数据";
+    // Always render the verified embedded dataset first. Older browser caches may
+    // have been produced by a parser that collapsed the variety column.
+    let sourceRows = embeddedRows;
+    let sourceName = "内置数据";
     let usageMetrics = loadUsageMetrics();
     let fruitCards = [];
+    let categoryCards = [];
 
     const monthOptions = ["全部", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "全年"];
     const state = {
@@ -1104,24 +1107,49 @@
       dataStatus.classList.toggle("warn", isWarning);
     }
 
+    const embeddedVarietyByStore = new Map(embeddedRows.map(row => [
+      `${dash(row.fruit)}\u0000${dash(row.store)}`,
+      dash(row.variety)
+    ]));
+
+    function firstField(item, names) {
+      for (const name of names) {
+        if (item?.[name] != null && String(item[name]).trim()) return item[name];
+      }
+      return "";
+    }
+
     function normalizeRecord(item) {
+      const fruit = dash(firstField(item, ["fruit", "水果", "fruit_name"]));
+      const store = dash(firstField(item, ["store", "店铺名称", "购买最多店铺", "店铺"]));
+      let variety = dash(firstField(item, ["variety", "fruit_variety", "fruitVariety", "水果品种", "品种"]));
+      const embeddedVariety = embeddedVarietyByStore.get(`${fruit}\u0000${store}`);
+      if ((variety === "未标注" || variety === fruit) && embeddedVariety && embeddedVariety !== fruit) {
+        variety = embeddedVariety;
+      }
       return {
-        fruit: dash(item.fruit),
-        variety: dash(item.variety),
-        store: dash(item.store),
-        count: dash(item.count),
-        price: dash(item.price),
-        platform: normalizePlatform(item.platform),
-        mature_months: dash(item.mature_months),
-        month_note: dash(item.month_note),
-        source_page: dash(item.source_page)
+        fruit,
+        variety,
+        store,
+        count: dash(firstField(item, ["count", "购买次数"])),
+        price: dash(firstField(item, ["price", "价格", "价格/元（PDF原文）", "价格/元(PDF原文)"])),
+        platform: normalizePlatform(firstField(item, ["platform", "店铺平台"])),
+        mature_months: dash(firstField(item, ["mature_months", "成熟月份"])),
+        month_note: dash(firstField(item, ["month_note", "来源说明"])),
+        source_page: dash(firstField(item, ["source_page", "来源页码"]))
       };
+    }
+
+    function displayVariety(fruit, variety) {
+      const base = dash(fruit);
+      const value = dash(variety);
+      return value === "未标注" ? base : value;
     }
 
     function buildCards(rows) {
       const groups = new Map();
       rows.map(normalizeRecord).forEach(row => {
-        const variety = row.variety === "未标注" ? row.fruit : row.variety;
+        const variety = displayVariety(row.fruit, row.variety);
         const key = `${row.fruit}\u0000${variety}`;
         if (!groups.has(key)) groups.set(key, { fruit: row.fruit, variety, details: [] });
         groups.get(key).details.push(row);
@@ -1133,6 +1161,26 @@
         const platforms = [...new Set(details.map(item => normalizePlatform(item.platform)))].sort((a, b) => a.localeCompare(b, "zh-CN"));
         return { fruit, variety, details: sorted, months, platforms };
       }).sort((a, b) => a.fruit.localeCompare(b.fruit, "zh-CN") || a.variety.localeCompare(b.variety, "zh-CN"));
+    }
+
+    function buildCategoryCards(rows) {
+      const groups = new Map();
+      rows.map(normalizeRecord).forEach(row => {
+        const category = categoryFor(row.fruit);
+        if (!groups.has(category)) groups.set(category, []);
+        groups.get(category).push(row);
+      });
+
+      return [...groups.entries()].map(([category, details]) => ({
+        fruit: category,
+        variety: category,
+        category,
+        mode: "category",
+        details,
+        varietyCount: new Set(details.map(row => `${row.fruit}\u0000${displayVariety(row.fruit, row.variety)}`)).size,
+        months: [...new Set(details.map(item => item.mature_months).filter(Boolean))].join("、"),
+        platforms: [...new Set(details.map(item => normalizePlatform(item.platform)))].sort((a, b) => a.localeCompare(b, "zh-CN"))
+      })).sort((a, b) => a.category.localeCompare(b.category, "zh-CN"));
     }
 
     function representative(card, details) {
@@ -1231,7 +1279,8 @@
 
     function filteredCards() {
       const query = state.query.trim().toLowerCase();
-      return fruitCards.map(card => {
+      const cardsForView = state.fruit === "全部" ? categoryCards : fruitCards;
+      return cardsForView.map(card => {
         if (state.fruit !== "全部" && categoryFor(card.fruit) !== state.fruit) return null;
         if (!card.details.some(detail => itemInMonth(detail, state.month))) return null;
 
@@ -1248,11 +1297,13 @@
     }
 
     function renderStats(cards) {
-      document.getElementById("totalCount").textContent = fruitCards.length;
+      document.getElementById("totalCount").textContent = categoryCards.length;
       document.getElementById("storeCount").textContent = sourceRows.length;
       document.getElementById("visibleCount").textContent = cards.length;
       renderUsageMetrics();
-      document.getElementById("resultText").textContent = `共 ${cards.length} 个品种`;
+      document.getElementById("resultText").textContent = state.fruit === "全部"
+        ? `共 ${cards.length} 个水果大类`
+        : `共 ${cards.length} 个品种`;
       document.getElementById("activeText").textContent = `${state.fruit === "全部" ? "全部水果" : state.fruit} · ${countLabel(state.minCount)} · ${monthLabel(state.month)} · ${state.platform === "全部" ? "全部平台" : state.platform}`;
       [...monthRail.children].forEach(button => button.classList.toggle("active", button.dataset.month === state.month));
       [...platformRail.children].forEach(button => button.classList.toggle("active", button.dataset.platform === state.platform));
@@ -1260,20 +1311,23 @@
 
     function createCard(card) {
       const top = representative(card, card.visibleDetails);
+      const isCategory = card.mode === "category";
       const button = document.createElement("button");
       button.type = "button";
       button.className = "item";
-      applyFruitTheme(button, card.fruit);
+      applyFruitTheme(button, top.fruit);
 
       const rowTop = document.createElement("div");
       rowTop.className = "row-top";
       const name = document.createElement("div");
       const fruit = document.createElement("span");
       fruit.className = "fruit";
-      fruit.textContent = `${card.fruit} · ${card.details.length}家店`;
+      fruit.textContent = isCategory
+        ? `水果大类 · ${card.varietyCount}个品种 · ${card.details.length}家店`
+        : `水果大类：${categoryFor(card.fruit)} · ${card.details.length}家店`;
       const title = document.createElement("h3");
       title.className = "variety";
-      title.textContent = card.variety;
+      title.textContent = isCategory ? card.category : card.variety;
       name.append(fruit, title);
 
       const platform = document.createElement("div");
@@ -1313,10 +1367,13 @@
     }
 
     function openDetail(card) {
-      applyFruitTheme(detailMask, card.fruit);
-      document.getElementById("modalTitle").textContent = card.variety;
+      const isCategory = card.mode === "category";
       const details = card.visibleDetails || card.details;
-      document.getElementById("modalSubtitle").textContent = `${card.fruit} · 符合筛选 ${details.length} 家 / 共 ${card.details.length} 家店铺`;
+      applyFruitTheme(detailMask, details[0]?.fruit || card.fruit);
+      document.getElementById("modalTitle").textContent = isCategory ? card.category : card.variety;
+      document.getElementById("modalSubtitle").textContent = isCategory
+        ? `${card.varietyCount} 个品种 · 符合筛选 ${details.length} 家 / 共 ${card.details.length} 家店铺`
+        : `${categoryFor(card.fruit)} · 符合筛选 ${details.length} 家 / 共 ${card.details.length} 家店铺`;
       detailGrid.innerHTML = "";
 
       details.forEach(detail => {
@@ -1327,7 +1384,8 @@
         const meta = document.createElement("div");
         meta.className = "detail-meta";
         [
-          ["水果大类", dash(detail.fruit)],
+          ["水果大类", categoryFor(detail.fruit)],
+          ["水果品种", displayVariety(detail.fruit, detail.variety)],
           ["店铺平台", normalizePlatform(detail.platform)],
           ["价格", dash(detail.price)],
           ["成熟月份", monthsText(detail.mature_months || card.months)],
@@ -1427,6 +1485,7 @@
 
     function rebuildData() {
       fruitCards = buildCards(sourceRows);
+      categoryCards = buildCategoryCards(sourceRows);
       setupFilters();
       render();
     }
