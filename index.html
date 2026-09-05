@@ -532,7 +532,7 @@
 
     .actions {
       display: grid;
-      grid-template-columns: repeat(2, minmax(68px, auto));
+      grid-template-columns: minmax(68px, auto);
       gap: 8px;
       align-items: stretch;
     }
@@ -568,10 +568,6 @@
       background: #2b6748;
       font-size: 13px;
       line-height: 1;
-    }
-
-    .download-button .button-icon {
-      background: #b36110;
     }
 
     .filters {
@@ -670,24 +666,8 @@
       align-items: center;
     }
 
-    .data-status,
-    .download-status {
+    .data-status {
       border-radius: 8px;
-    }
-
-    .download-status {
-      min-height: 24px;
-      padding: 4px 8px;
-      color: #704108;
-      background: #fff0d7;
-      font-size: 12px;
-      font-weight: 750;
-      line-height: 1.2;
-    }
-
-    .download-status.error {
-      color: #9f2d20;
-      background: #ffe6df;
     }
 
     .list {
@@ -743,7 +723,7 @@
 
     @media (max-width: 719px) {
       .stats {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0;
         margin-bottom: 10px;
         padding: 8px 0;
@@ -752,8 +732,7 @@
         background: rgba(255, 255, 255, 0.82);
       }
 
-      .stat,
-      .stat:nth-child(5) {
+      .stat {
         grid-column: auto;
         min-height: 0;
         padding: 0 4px;
@@ -814,11 +793,7 @@
       }
 
       .stats {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-      }
-
-      .stat:nth-child(5) {
-        grid-column: auto;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
 
       .modal-mask {
@@ -843,10 +818,6 @@
           <h1>水果推荐</h1>
         </div>
         <div class="actions" aria-label="页面操作">
-          <button id="downloadData" class="toolbar-button download-button" type="button" title="下载当前结果" aria-label="下载当前结果">
-            <span class="button-icon" aria-hidden="true">↓</span>
-            <span>下载</span>
-          </button>
           <button id="openImport" class="toolbar-button import-button" type="button" title="导入Excel" aria-label="导入Excel">
             <span class="button-icon" aria-hidden="true">+</span>
             <span>导入</span>
@@ -868,7 +839,6 @@
         <div class="stat"><span>店铺记录</span><strong id="storeCount">0</strong></div>
         <div class="stat"><span>当前结果</span><strong id="visibleCount">0</strong></div>
         <div class="stat"><span>浏览量</span><strong id="viewCount">0</strong></div>
-        <div class="stat"><span>下载量</span><strong id="downloadCount">0</strong></div>
       </section>
 
       <div id="monthRail" class="chip-rail" aria-label="月份快捷筛选"></div>
@@ -877,7 +847,6 @@
       <div class="result-line">
         <span id="resultText">共 0 类</span>
         <span id="dataStatus" class="data-status warn">内置数据</span>
-        <span id="downloadStatus" class="download-status">未下载</span>
         <span id="activeText">全部水果 · 全部月份 · 全部平台</span>
       </div>
 
@@ -1019,7 +988,6 @@
     const emailInput = document.getElementById("emailInput");
     const passwordInput = document.getElementById("passwordInput");
     const excelInput = document.getElementById("excelInput");
-    const downloadStatus = document.getElementById("downloadStatus");
 
     function dash(value) {
       const text = value == null ? "" : String(value).trim();
@@ -1105,11 +1073,10 @@
         const raw = localStorage.getItem(metricsKey);
         const parsed = raw ? JSON.parse(raw) : {};
         return {
-          views: Number(parsed.views || 0),
-          downloads: Number(parsed.downloads || 0)
+          views: Number(parsed.views || 0)
         };
       } catch {
-        return { views: 0, downloads: 0 };
+        return { views: 0 };
       }
     }
 
@@ -1130,12 +1097,6 @@
 
     function renderUsageMetrics() {
       document.getElementById("viewCount").textContent = formatNumber(usageMetrics.views);
-      document.getElementById("downloadCount").textContent = formatNumber(usageMetrics.downloads);
-    }
-
-    function setDownloadStatus(text, isError = false) {
-      downloadStatus.textContent = text;
-      downloadStatus.classList.toggle("error", isError);
     }
 
     function setDataStatus(text, isWarning = false) {
@@ -1462,54 +1423,6 @@
       }
     }
 
-    function downloadCurrentData() {
-      const cards = filteredCards();
-      if (!cards.length) {
-        setDownloadStatus("无可下载结果", true);
-        return;
-      }
-
-      const headers = ["水果", "购买最多店铺", "店铺平台", "价格", "成熟月份", "购买次数", "店铺数量"];
-      const rows = cards.map(card => {
-        const top = representative(card, card.visibleDetails || card.details);
-        return [
-          card.fruit,
-          dash(top.store),
-          normalizePlatform(top.platform),
-          dash(top.price),
-          monthsText(card.months || top.mature_months),
-          dash(top.count),
-          card.details.length
-        ];
-      });
-      const csv = "\ufeff" + [headers, ...rows].map(row => row.map(csvCell).join(",")).join("\r\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `水果推荐_${dateStamp()}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-      usageMetrics.downloads += 1;
-      saveUsageMetrics();
-      renderUsageMetrics();
-      setDownloadStatus(`已下载 ${formatNumber(usageMetrics.downloads)} 次`);
-    }
-
-    function csvCell(value) {
-      const text = String(value ?? "").replace(/\r?\n/g, " / ");
-      return `"${text.replace(/"/g, '""')}"`;
-    }
-
-    function dateStamp() {
-      const now = new Date();
-      const pad = value => String(value).padStart(2, "0");
-      return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
-    }
-
     function rebuildData() {
       fruitCards = buildCards(sourceRows);
       setupFilters();
@@ -1533,7 +1446,17 @@
       const response = await fetch(`${cloudConfig.url}${path}`, options);
       if (!response.ok) {
         let detail = "";
-        try { detail = (await response.json()).message || ""; } catch {}
+        let errorCode = "";
+        try {
+          const payload = await response.json();
+          detail = payload.message || payload.msg || payload.error_description || payload.error || "";
+          errorCode = payload.error_code || payload.code || "";
+        } catch {}
+        if (errorCode === "invalid_credentials" || /invalid login credentials/i.test(detail)) {
+          detail = "管理员邮箱或密码不正确，请检查后重试";
+        } else if (errorCode === "email_not_confirmed" || /email not confirmed/i.test(detail)) {
+          detail = "管理员邮箱尚未确认，请先在 Supabase 用户列表中确认该邮箱";
+        }
         throw new Error(detail || `云端请求失败（${response.status}）`);
       }
       if (response.status === 204) return null;
@@ -1564,6 +1487,7 @@
     async function signInCloudAdmin() {
       const email = emailInput.value.trim();
       if (!email) throw new Error("请输入管理员邮箱");
+      if (!passwordInput.value) throw new Error("请输入管理员密码");
       const result = await cloudRequest("/auth/v1/token?grant_type=password", {
         method: "POST",
         headers: cloudHeaders(),
@@ -1815,7 +1739,6 @@
       render();
     });
     document.getElementById("openImport").addEventListener("click", openImport);
-    document.getElementById("downloadData").addEventListener("click", downloadCurrentData);
     document.getElementById("closeImport").addEventListener("click", closeImport);
     document.getElementById("importExcel").addEventListener("click", importExcel);
     document.getElementById("clearImport").addEventListener("click", clearImport);
