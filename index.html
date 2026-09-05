@@ -835,7 +835,7 @@
 
     <main>
       <section class="stats" aria-label="数据概览">
-        <div class="stat"><span>水果卡片</span><strong id="totalCount">0</strong></div>
+        <div class="stat"><span>水果品种</span><strong id="totalCount">0</strong></div>
         <div class="stat"><span>店铺记录</span><strong id="storeCount">0</strong></div>
         <div class="stat"><span>当前结果</span><strong id="visibleCount">0</strong></div>
         <div class="stat"><span>浏览量</span><strong id="viewCount">0</strong></div>
@@ -1121,20 +1121,22 @@
     function buildCards(rows) {
       const groups = new Map();
       rows.map(normalizeRecord).forEach(row => {
-        if (!groups.has(row.fruit)) groups.set(row.fruit, []);
-        groups.get(row.fruit).push(row);
+        const variety = row.variety === "未标注" ? row.fruit : row.variety;
+        const key = `${row.fruit}\u0000${variety}`;
+        if (!groups.has(key)) groups.set(key, { fruit: row.fruit, variety, details: [] });
+        groups.get(key).details.push(row);
       });
 
-      return [...groups.entries()].map(([fruit, details]) => {
+      return [...groups.values()].map(({ fruit, variety, details }) => {
         const sorted = [...details].sort((a, b) => parseCount(b.count) - parseCount(a.count) || a.store.localeCompare(b.store, "zh-CN"));
         const months = [...new Set(details.map(item => item.mature_months).filter(Boolean))].join("、");
         const platforms = [...new Set(details.map(item => normalizePlatform(item.platform)))].sort((a, b) => a.localeCompare(b, "zh-CN"));
-        return { fruit, details: sorted, months, platforms };
-      }).sort((a, b) => a.fruit.localeCompare(b.fruit, "zh-CN"));
+        return { fruit, variety, details: sorted, months, platforms };
+      }).sort((a, b) => a.fruit.localeCompare(b.fruit, "zh-CN") || a.variety.localeCompare(b.variety, "zh-CN"));
     }
 
     function representative(card, details) {
-      const source = details.length ? details : card.details;
+      const source = details?.length ? details : card.details;
       return [...source].sort((a, b) => parseCount(b.count) - parseCount(a.count) || a.store.localeCompare(b.store, "zh-CN"))[0];
     }
 
@@ -1250,7 +1252,7 @@
       document.getElementById("storeCount").textContent = sourceRows.length;
       document.getElementById("visibleCount").textContent = cards.length;
       renderUsageMetrics();
-      document.getElementById("resultText").textContent = `共 ${cards.length} 类`;
+      document.getElementById("resultText").textContent = `共 ${cards.length} 个品种`;
       document.getElementById("activeText").textContent = `${state.fruit === "全部" ? "全部水果" : state.fruit} · ${countLabel(state.minCount)} · ${monthLabel(state.month)} · ${state.platform === "全部" ? "全部平台" : state.platform}`;
       [...monthRail.children].forEach(button => button.classList.toggle("active", button.dataset.month === state.month));
       [...platformRail.children].forEach(button => button.classList.toggle("active", button.dataset.platform === state.platform));
@@ -1271,7 +1273,7 @@
       fruit.textContent = `${card.fruit} · ${card.details.length}家店`;
       const title = document.createElement("h3");
       title.className = "variety";
-      title.textContent = card.fruit;
+      title.textContent = card.variety;
       name.append(fruit, title);
 
       const platform = document.createElement("div");
@@ -1312,9 +1314,9 @@
 
     function openDetail(card) {
       applyFruitTheme(detailMask, card.fruit);
-      document.getElementById("modalTitle").textContent = card.fruit;
+      document.getElementById("modalTitle").textContent = card.variety;
       const details = card.visibleDetails || card.details;
-      document.getElementById("modalSubtitle").textContent = `符合筛选 ${details.length} 家 / 共 ${card.details.length} 家店铺`;
+      document.getElementById("modalSubtitle").textContent = `${card.fruit} · 符合筛选 ${details.length} 家 / 共 ${card.details.length} 家店铺`;
       detailGrid.innerHTML = "";
 
       details.forEach(detail => {
@@ -1325,7 +1327,7 @@
         const meta = document.createElement("div");
         meta.className = "detail-meta";
         [
-          ["水果品种", dash(detail.variety)],
+          ["水果大类", dash(detail.fruit)],
           ["店铺平台", normalizePlatform(detail.platform)],
           ["价格", dash(detail.price)],
           ["成熟月份", monthsText(detail.mature_months || card.months)],
